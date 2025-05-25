@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Álbum de Amor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #fce4ec;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #loading-screen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #fce4ec;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    #start-button-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    #start-button {
+      padding: 15px 30px;
+      font-size: 18px;
+      background-color: #ec407a;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .album-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 500px;
+      padding: 10px;
+    }
+
+    .media-display {
+      width: 100%;
+      height: auto;
+      max-height: 70vh;
+      overflow: hidden;
+      border-radius: 12px;
+      position: relative;
+    }
+
+    .media-photo, .media-video {
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+      border-radius: 12px;
+    }
+
+    .media-photo {
+      animation: zoomIn 10s ease-in-out forwards;
+      transform-origin: center center;
+    }
+
+    @keyframes zoomIn {
+      from {
+        transform: scale(1);
+      }
+      to {
+        transform: scale(1.1);
+      }
+    }
+
+    .caption {
+      margin-top: 10px;
+      font-size: 18px;
+      text-align: center;
+      color: #880e4f;
+    }
+
+    .controls {
+      display: none;
+      margin-top: 15px;
+      gap: 20px;
+    }
+
+    .controls button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #ec407a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .controls button:hover {
+      background-color: #d81b60;
+    }
+
+    @media (max-width: 600px) {
+      .caption {
+        font-size: 16px;
+        padding: 0 10px;
+      }
+
+      #start-button {
+        font-size: 16px;
+        padding: 12px 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loading-screen">
+    <img src="assets/fotos/carregamento.gif" width="100" alt="Carregando">
+  </div>
+
+  <div id="start-button-container">
+    <button id="start-button">Iniciar</button>
+  </div>
+
+  <div class="album-container">
+    <div class="media-display" id="media-display"></div>
+    <div class="caption" id="caption"></div>
+    <div class="controls">
+      <button id="prev-button" style="display: none"> < </button>
+      <button id="next-button" style="display: none"> > </button>
+    </div>
+  </div>
+
+  <audio id="bg-music" loop></audio>
+
+  <script>
+    const albumData = [
+      {
+        type: 'photo',
+        src: 'assets/fotos/primeira-frase.png',
+        music: 'assets/musicas/musica-romantica.mp3',
+        caption: '',
+        duration: 7000
+      },  
+      {
+        type: 'photo',
+        src: 'assets/fotos/modelo.jpg',
+        music: 'assets/musicas/musica-romantica.mp3',
+        caption: 'Toda modelinha. ❤️',
+        duration: 8000
+      },  
+      {
+        type: 'photo',
+        src: 'assets/fotos/teste-maquiagem.jpg',
+        music: 'assets/musicas/musica-romantica.mp3',
+        caption: 'Quando penso que não dá pra ficar mais linda, você vai lá e mostra o contrário. 😍',
+        duration: 8000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/rippie.jpg',
+        music: 'assets/musicas/musica-romantica.mp3',
+        caption: 'As vezes rippie... (Outras roqueira)',
+        duration: 8000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/joinha.jpg',
+        music: 'assets/musicas/musica-romantica.mp3',
+        caption: 'As vezes confortável... 👍',
+        duration: 8000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/meiga.jpg',
+        music: 'assets/musicas/musica-romantica.mp3',
+        caption: 'Meiga também... (Esse dia foi louco 🤟)',
+        duration: 8000
+      },
+      {
+        type: 'video',
+        src: 'assets/videos/dormindo-ou-morta.mp4',
+        music: 'assets/musicas/gargalhadas.mp3',
+        caption: 'Um momento inesquecível kkkkkkkkkk. 🎥',
+        duration: 20000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/boca-colada.jpg',
+        music: 'assets/musicas/musica-romantica.mp3',
+        caption: 'Bocas coladas. 😠 (Queria que nunca tivesse descolado)',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/ela-zebra.jpg',
+        music: 'assets/musicas/zebrinha.mp3',
+        caption: 'Te ver feliz é a paisagem mais bonita.',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/ela-zebra-dois.jpg',
+        music: 'assets/musicas/zebrinha.mp3',
+        caption: 'Olha a zebrinha de novo. 🦓',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/zebra-tres.jpg',
+        music: 'assets/musicas/zebrinha.mp3',
+        caption: '',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/zebra-quatro.jpg',
+        music: 'assets/musicas/zebrinha.mp3',
+        caption: '',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/guerreira.png',
+        music: 'assets/musicas/musica-romantica.mp3',
+        caption: '',
+        duration: 7000
+      },
+      {
+        type: 'video',
+        src: 'assets/videos/trabalho.mp4',
+        music: '',
+        caption: 'Trabalhadora brasileira.',
+        duration: 20000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/faculdade.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'Primeiro dia na faculdade. ❤️',
+        duration: 7000
+      }, 
+      {
+        type: 'photo',
+        src: 'assets/fotos/faculdade-2.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'A coisa mais gotosa. 🫰',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/mascara.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'Continua gotosa kkkkkk. 🫰',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/torrando-dinheiro.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'Torrando dinheiro. 💸💸💸💸💸💸💸💸',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/otima-esposa.png',
+        music: 'assets/musicas/alegre.mp3',
+        caption: '',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/mascara-dois.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'Fazendo skin care pra diminuir a feiura. 🫰',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/deboa-na-rede.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'Curtindo a praia.',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/sorrindo-resenha.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'Bêbados da cachaça do Boa Luz. 🤪',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/enfoicando.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'Sorte que tenho de viver ao seu lado. ❤️',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/deitados.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'Cada ano do teu lado é o melhor presente que a vida poderia me dar. ❤️',
+        duration: 9000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/fofinhos.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'O aniversário é seu, mas o melhor presente ficou pra mim (tu). ❤️',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/inguais.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'Combinando. ❤️',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/friends.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'Espero te levar em mais lugares legais (Qualquer lugar é legal quando a gente tá junto kk). ❤️',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/lugar-chique.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'Tanto nos lugares chiques. ❤️',
+        duration: 4000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/lugar-chique-2.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: '',
+        duration: 3000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/lugar-chique-3.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: '',
+        duration: 3000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/lugar-chique-4.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'E nos mais chiques ainda. 💸💸💸💸',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/ceia.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'Primeira ceia com nossa família. 🎅🎄',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/dia-bom.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'Sem comentários pra esse dia...',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/nos-dois.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'Até nos momentos de tortura kkkkk. ❤️',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/ano-novo.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'Esse dia foi bom. 🎉🎉🎉',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/princesinha.jpg',
+        music: 'assets/musicas/alegre.mp3',
+        caption: 'Minha princesa, eu te ibirigue. ❤️',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/frase-mingau.png',
+        music: 'assets/musicas/alegre.mp3',
+        caption: '',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/mingau-fofinho.jpg',
+        music: 'assets/musicas/musica-cachorro.mp3',
+        caption: 'Sou eu, mamãe. 🐶',
+        duration: 7000
+      },
+      {
+        type: 'video',
+        src: 'assets/videos/mingau-lambe.mp4',
+        music: 'assets/musicas/musica-cachorro.mp3',
+        caption: '',
+        duration: 10000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/mingau-dormindo.jpg',
+        music: 'assets/musicas/musica-cachorro.mp3',
+        caption: 'Dois preguiçosos. 🐶',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/mingau-dormindo-2.jpg',
+        music: 'assets/musicas/musica-cachorro.mp3',
+        caption: 'Dormindo de novo... 🐶',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/mingau-mimi.png',
+        music: 'assets/musicas/musica-cachorro.mp3',
+        caption: 'KKKKKKKKKKKKK',
+        duration: 7000
+      },
+      {
+        type: 'video',
+        src: 'assets/videos/tal-mae-tal-filho.mp4',
+        music: 'assets/musicas/musica-cachorro.mp3',
+        caption: 'Tal mãe, tal filho. KKKKKKKK',
+        duration: 11000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/mingau-lingua.jpg',
+        music: 'assets/musicas/musica-cachorro.mp3',
+        caption: 'kkkkkkkkkk',
+        duration: 7000
+      },
+      {
+        type: 'video',
+        src: 'assets/videos/atentando.mp4',
+        music: 'assets/musicas/musica-cachorro.mp3',
+        caption: '',
+        duration: 14000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/familia-nossa.jpg',
+        music: 'assets/musicas/musica-cachorro.mp3',
+        caption: 'Nossa família.',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/mingau-folgado.jpg',
+        music: 'assets/musicas/musica-cachorro.mp3',
+        caption: 'Te aumo, mamãe. 🐶❤️',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/final.jpg',
+        music: 'assets/musicas/musica-cachorro.mp3',
+        caption: 'Feliz aniversário. ❤️',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/zoiuda.jpg',
+        music: 'assets/musicas/aniversario.mp3',
+        caption: 'Minha zoiúda. ❤️',
+        duration: 7000
+      },
+      {
+        type: 'photo',
+        src: 'assets/fotos/frase-final.png',
+        music: 'assets/musicas/aniversario.mp3',
+        caption: '<a href="https://drive.google.com/file/d/1HagIiich6Qy9fZUzQD7LeVDLAuqI4Bd2/view?usp=sharing" target="_blank">Clique aqui para baixar</a>',
+        final: true,
+        duration: 7000
+      },
+    ];
+
+    let currentIndex = 0;
+    let intervalId;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const loadingScreen = document.getElementById('loading-screen');
+      const startContainer = document.getElementById('start-button-container');
+      const startButton = document.getElementById('start-button');
+      const albumContainer = document.querySelector('.album-container');
+      const mediaDisplay = document.getElementById('media-display');
+      const caption = document.getElementById('caption');
+      const music = document.getElementById('bg-music');
+      const prevButton = document.getElementById('prev-button');
+      const nextButton = document.getElementById('next-button');
+      let   isAlbumFinalizado = false;
+
+      setTimeout(() => {
+        loadingScreen.style.display = 'none';
+        startContainer.style.display = 'flex';
+      }, 0);
+
+      startButton.addEventListener('click', () => {
+        startContainer.style.display = 'none';
+        albumContainer.style.display = 'flex';
+        document.querySelector('.controls').style.display = 'flex';
+        playItem(currentIndex);
+      });
+
+      function playItem(index, isPrevButton) {
+        const item = albumData[index];
+        mediaDisplay.innerHTML = '';
+        caption.innerText = '';
+
+        if (item.type === 'photo') {
+          const img = document.createElement('img');
+          img.src = item.src;
+          img.className = 'media-photo';
+          mediaDisplay.appendChild(img);
+        } else if (item.type === 'video') {
+          const video = document.createElement('video');
+          video.src = item.src;
+          video.controls = false;
+          video.autoplay = true;
+          video.className = 'media-video';
+          mediaDisplay.appendChild(video);
+        }
+
+        caption.innerHTML = item.caption || '';
+
+        if ((item.music && item.music.split('/').pop() != music.src.split('/').pop()) || music.paused) {
+          music.src = item.music;
+          music.play().catch(e => console.log('Erro ao tocar música:', e));
+        }else if(item.music === '') {
+          music.pause();
+        }
+
+        
+        if(item.final || isAlbumFinalizado){
+          isAlbumFinalizado = true;
+          prevButton.style.display = "";
+          nextButton.style.display = "";
+        }else{
+          clearTimeout(intervalId);
+          intervalId = setTimeout(() => {
+          currentIndex = (currentIndex + 1) % albumData.length;
+          playItem(currentIndex);
+          }, item.duration);
+        }
+      }
+
+      prevButton.addEventListener('click', () => {
+        currentIndex = (currentIndex - 1 + albumData.length) % albumData.length;
+        playItem(currentIndex, true);
+      });
+
+      nextButton.addEventListener('click', () => {
+        currentIndex = (currentIndex + 1) % albumData.length;
+        playItem(currentIndex);
+      });
+
+    });
+  </script>
+</body>
+</html>
